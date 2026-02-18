@@ -1,0 +1,266 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="bg-white p-4 cardish">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="mb-0">🧾 Ventas</h3>
+        <form method="post" action="{{ url_for('cart_clear') }}">
+          <button class="btn btn-outline-danger" type="submit">Vaciar</button>
+        </form>
+      </div>
+
+      <!-- ESCANEO / INGRESO MANUAL POR BARCODE -->
+      <form method="post" action="{{ url_for('cart_add_barcode') }}" class="mb-3">
+        <label class="form-label">Escanear o escribir código de barras</label>
+        <input id="barcodeInput" class="form-control pos-input" name="barcode"
+               placeholder="Escanea o escribe y presiona Enter..." autocomplete="off">
+        <div class="form-text">
+          Tip: el lector USB escribe aquí como teclado. Mantén este campo enfocado.
+        </div>
+      </form>
+
+      <!-- BUSCADOR MANUAL POR NOMBRE / BARCODE -->
+        <div class="mt-3">
+        <label class="form-label">Buscar y agregar manualmente </label>
+
+        <div class="input-group">
+            <input id="manualSearch"
+                class="form-control"
+                placeholder="Ej: arroz, coca, 786..."
+                autocomplete="off">
+            <button class="btn btn-outline-dark" type="button" id="btnClear">Limpiar</button>
+        </div>
+
+        <div id="searchResults" class="list-group mt-2"></div>
+
+        <div class="form-text">
+            Escribe al menos 2 letras. Click en un resultado para agregar al carrito.
+        </div>
+        </div>
+
+
+      <!-- CARRITO -->
+      <form method="post" action="{{ url_for('cart_update') }}" class="mt-3">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Codigo</th>
+                <th class="text-end">Precio</th>
+                <th class="text-end" style="width:140px;">Cant</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for it in items %}
+              <tr>
+                <td class="fw-semibold">{{ it.p.name }}</td>
+                <td class="font-monospace">{{ it.p.barcode }}</td>
+                <td class="text-end">${{ '%.2f'|format(it.p.price) }}</td>
+                <td class="text-end">
+                  <input class="form-control text-end" type="number" min="0" name="qty_{{ it.p.id }}" value="{{ it.qty }}">
+                </td>
+                <td class="text-end fw-bold">${{ it.line }}</td>
+              </tr>
+            {% endfor %}
+            {% if not items %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  Escanea un producto o búscalo manualmente para empezar.
+                </td>
+              </tr>
+            {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" type="submit">Actualizar cantidades</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="bg-white p-4 cardish">
+      <div class="badge-soft mb-2">Resumen</div>
+      <div class="d-flex justify-content-between"><span>Subtotal</span><b>${{ subtotal }}</b></div>
+      <div class="d-flex justify-content-between"><span>IVA ({{ (TAX_RATE*100)|round(0) }}%)</span><b>${{ tax }}</b></div>
+      <hr>
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="fs-5 fw-bold">TOTAL</span>
+        <span class="big-total">${{ total }}</span>
+      </div>
+
+      <form method="post" action="{{ url_for('checkout') }}" class="mt-3">
+        <label class="form-label">Cliente </label>
+        <label class="form-label">Ruc/Cedula </label>
+        <input class="form-control" id="customer_id" name="customer_id" placeholder="Ej: 1712345678">
+        <label class="form-label">Nombre </label>
+        <input class="form-control" id="customer_name" name="customer_name" placeholder="Nombre...">
+        <label class="form-label">Telefono </label>
+        <input class="form-control" id="customer_phone" name="customer_phone" placeholder="09...">
+        <label class="form-label">Direccion </label>
+        <input class="form-control" id="customer_address" name="customer_address" placeholder="Dirección...">
+        <label class="form-label">Email </label>
+        <input class="form-control" id="customer_email" name="customer_email" placeholder="correo@...">
+
+        <label class="form-label mt-2">Método de pago</label>
+        <select class="form-select" name="payment_method">
+          <option>EFECTIVO</option>
+          <option>TARJETA</option>
+          <option>TRANSFERENCIA</option>
+        </select>
+
+        <button class="btn btn-success btn-xl w-100 mt-3" type="submit" {% if not items %}disabled{% endif %}>
+        COBRAR ✅
+        </button>
+
+        <button class="btn btn-outline-danger w-100 mt-2" type="button" id="btnCancel">
+        Cancelar ❌
+        </button>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Mantener siempre el focus en el input de barcode
+  const input = document.getElementById("barcodeInput");
+  function focusBarcode(){ input && input.focus(); }
+  window.addEventListener("load", focusBarcode);
+  document.addEventListener("click", (e) => {
+  if (e.target.closest("input, textarea, select, button")) return;
+  focusBarcode(); 
+});
+</script>
+
+
+<script>
+  // Buscador manual por nombre/barcode con resultados y "click para agregar"
+  const searchInput = document.getElementById("manualSearch");
+  const resultsBox = document.getElementById("searchResults");
+  const btnClear = document.getElementById("btnClear");
+
+  function clearResults() {
+    resultsBox.innerHTML = "";
+  }
+
+  btnClear?.addEventListener("click", () => {
+    searchInput.value = "";
+    clearResults();
+    focusBarcode();
+  });
+
+  let t = null;
+  searchInput?.addEventListener("input", () => {
+    clearTimeout(t);
+    const q = searchInput.value.trim();
+    if (q.length < 2) { clearResults(); return; }
+
+    t = setTimeout(async () => {
+      const resp = await fetch(`/products/search?q=${encodeURIComponent(q)}`);
+      const data = await resp.json();
+      clearResults();
+
+      if (!data.results.length) {
+        const el = document.createElement("div");
+        el.className = "list-group-item text-muted";
+        el.textContent = "Sin resultados…";
+        resultsBox.appendChild(el);
+        return;
+      }
+
+      data.results.forEach(p => {
+        const a = document.createElement("button");
+        a.type = "button";
+        a.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
+        a.innerHTML = `
+          <div>
+            <div class="fw-semibold">${p.name}</div>
+            <div class="text-muted small font-monospace">${p.barcode}</div>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold">$${Number(p.price).toFixed(2)}</div>
+            <div class="small ${p.stock<=5 ? 'text-danger' : 'text-muted'}">Stock: ${p.stock}</div>
+          </div>
+        `;
+
+        a.addEventListener("click", async () => {
+          const form = new FormData();
+          form.append("product_id", p.id);
+          await fetch("/cart/add_product", { method: "POST", body: form });
+          window.location.reload();
+        });
+
+        resultsBox.appendChild(a);
+      });
+    }, 200);
+  });
+</script>
+
+<script>
+  console.log("POS scripts cargados ✅");
+</script>
+
+<script>
+  const doc = document.getElementById("customer_id");
+  const name = document.getElementById("customer_name");
+  const phone = document.getElementById("customer_phone");
+  const address = document.getElementById("customer_address");
+  const email = document.getElementById("customer_email");
+
+  let timer = null;
+
+  async function fetchCustomer(d) {
+    const resp = await fetch(`/customers/by_doc?doc=${encodeURIComponent(d)}`);
+    return resp.json();
+  }
+
+  doc?.addEventListener("input", () => {
+    clearTimeout(timer);
+    const v = doc.value.trim();
+
+    // Limpiar si está corto
+    if (v.length < 5) return;
+
+    timer = setTimeout(async () => {
+      const data = await fetchCustomer(v);
+      if (!data.found) return;
+
+      // Autocompletar
+      name.value = data.customer.name || "";
+      phone.value = data.customer.phone || "";
+      address.value = data.customer.address || "";
+      email.value = data.customer.email || "";
+    }, 250);
+  });
+</script>
+<script>
+  const btnCancel = document.getElementById("btnCancel");
+
+  btnCancel?.addEventListener("click", async () => {
+    if (!confirm("¿Cancelar la venta y vaciar el carrito?")) return;
+
+    // Vaciar carrito
+    await fetch("{{ url_for('cart_clear') }}", { method: "POST" });
+
+    // Limpiar datos del cliente
+    const ids = ["customer_id","customer_name","customer_phone","customer_address","customer_email"];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    window.location.reload();
+  });
+</script>
+
+{% endblock %}

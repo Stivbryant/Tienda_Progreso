@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block head_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='welcome.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="wmin">
+  <div class="wmin-bg" aria-hidden="true">
+    <span class="wmin-blob a"></span>
+    <span class="wmin-blob b"></span>
+    <span class="wmin-grid"></span>
+  </div>
+
+  <section class="wmin-hero cardish">
+    <div class="wmin-head">
+      <div class="wmin-pill"><span class="wmin-dot"></span> Bienvenido</div>
+      <h1 class="wmin-title">👋 {{ STORE_NAME }}</h1>
+      <p class="wmin-subtitle">Ventas rápidas con código de barras y factura lista.</p>
+
+      <div class="wmin-actions">
+        {% if session.get("user_id") %}
+          <a class="btn btn-success btn-lg" href="{{ url_for('pos') }}">Abrir POS →</a>
+          <a class="btn btn-outline-dark btn-lg" href="{{ url_for('products') }}">Productos</a>
+        {% else %}
+          <a class="btn btn-success btn-lg" href="{{ url_for('login') }}">Entrar →</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="wmin-features">
+      <div class="wmin-card">
+        <div class="wmin-ic">🏷️</div>
+        <div class="wmin-ct">Escáner</div>
+        <div class="wmin-cd">Escanea y agrega al carrito.</div>
+      </div>
+
+      <div class="wmin-card">
+        <div class="wmin-ic">🔎</div>
+        <div class="wmin-ct">Buscar</div>
+        <div class="wmin-cd">Nombre o barcode, 1 click.</div>
+      </div>
+
+      <div class="wmin-card">
+        <div class="wmin-ic">🧾</div>
+        <div class="wmin-ct">Factura</div>
+        <div class="wmin-cd">Lista para imprimir.</div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

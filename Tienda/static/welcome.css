@@ -1,0 +1,81 @@
+.wmin { max-width: 980px; margin: 0 auto; position: relative; }
+
+.wmin-bg{
+  position:absolute; inset:-25px -10px auto -10px;
+  height: 360px; pointer-events:none; z-index:0; overflow:hidden;
+  border-radius: 24px;
+}
+
+.wmin-grid{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity:.45;
+  mask-image: radial-gradient(closest-side, rgba(0,0,0,.9), transparent 80%);
+}
+
+.wmin-blob{
+  position:absolute; width:320px; height:320px;
+  border-radius:999px; filter: blur(40px); opacity:.55;
+  animation: floaty 10s ease-in-out infinite;
+}
+.wmin-blob.a{ top:-120px; left:-90px; background: radial-gradient(circle, rgba(25,135,84,.55), transparent 60%); }
+.wmin-blob.b{ top:-140px; right:-90px; background: radial-gradient(circle, rgba(13,110,253,.55), transparent 60%); animation-delay:-3s; }
+
+@keyframes floaty{
+  0%,100%{ transform: translateY(0) translateX(0) scale(1); }
+  50%{ transform: translateY(14px) translateX(-10px) scale(1.03); }
+}
+
+.wmin-hero{
+  position:relative; z-index:1;
+  padding: 26px;
+  border: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(10px);
+}
+
+.wmin-pill{
+  display:inline-flex; align-items:center; gap:10px;
+  padding: 7px 12px; border-radius:999px;
+  font-size:13px; font-weight:700;
+  background: rgba(13,110,253,.08);
+  border: 1px solid rgba(13,110,253,.18);
+  color:#1f2a37;
+}
+.wmin-dot{
+  width:10px; height:10px; border-radius:999px; background:#198754;
+  box-shadow: 0 0 0 5px rgba(25,135,84,.18);
+}
+
+.wmin-title{ font-size: 40px; margin: 12px 0 6px; letter-spacing: -.4px; }
+.wmin-subtitle{ color:#6c757d; margin:0 0 16px; font-size: 15px; }
+
+.wmin-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+
+.wmin-features{
+  margin-top: 18px;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.wmin-card{
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.85);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.wmin-card:hover{ transform: translateY(-2px); box-shadow: 0 12px 22px rgba(0,0,0,.06); }
+
+.wmin-ic{ font-size: 22px; }
+.wmin-ct{ font-weight: 900; margin-top: 6px; color:#1f2a37; }
+.wmin-cd{ font-size: 13px; color:#6c757d; margin-top: 2px; }
+
+@media (max-width: 768px){
+  .wmin-title{ font-size: 32px; }
+  .wmin-features{ grid-template-columns: 1fr; }
+}
